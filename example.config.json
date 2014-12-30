@@ -1,0 +1,8 @@
+{
+  "datagres": {
+    "username": "USERNAME",
+    "password": "PASSWORD",
+    "address": "HOSTNAME",
+    "dbname": "DATABASE_NAME"
+  }
+}
