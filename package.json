@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "fandlebars": "git+https://github.com/jimmyrocks/fandlebars#master",
-    "node-dir": "0.1.6",
     "pg": "4.1.1",
     "q": "1.1.2"
   }
