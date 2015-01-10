@@ -20,9 +20,10 @@
     "bluebird": "2.6.2",
     "fandlebars": "git+https://github.com/jimmyrocks/fandlebars#master",
     "pg": "4.1.1",
-    "sqllite3": "3.0.4"
+    "sqlite3": "3.0.4"
   },
   "devDependencies": {
     "tape": "3.0.3"
-  }
+  },
+  "engine": "node 0.10.35"
 }

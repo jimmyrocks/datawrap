@@ -1,12 +1,11 @@
 var fandlebars = require('fandlebars'),
   fs = require('fs'),
-  pg = require('pg'),
-  Q = require('q');
+  pg = require('pg');
 
 module.exports = function(config) {
-
   var connect = function(callback) {
-      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{hostname}}/{{dbname}}', config.database);
+      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{hostname}}/{{dbname}}', config);
+      console.log(connectionString);
       pg.connect(connectionString, callback);
     },
     db = {
@@ -67,11 +66,15 @@ module.exports = function(config) {
                 });
               }
             });
-            db.runQueryList(queries, callback);
+            db.runQueryListOld(queries, callback);
           }
         });
       },
-      runQueryList: function(queryObj, callback) {
+      runQueryList: function(queries, params, options, callback) {
+        queries = queries.map(function(a){return {query: a, params: params};});
+        db.runQueryListOld(queries, callback);
+      },
+      runQueryListOld: function(queryObj, callback) {
         // Runs Queries in order and waits for each to complete before starting the next query
         var results = [],
           queryIndex = -1,
@@ -101,30 +104,6 @@ module.exports = function(config) {
             callback(null, results);
           };
         next();
-      },
-      runQueryListAsync: function(queries, callback) {
-        // Runs all Queries at once
-        var qRunQuery = function(queryObj) {
-          var deferred = Q.defer();
-          db.runQuery(
-            queryObj.query ? queryObj.query : queryObj.toString(),
-            queryObj.params ? queryObj.params : null,
-            function(e, r) {
-              if (e) {
-                deferred.reject(e.stack ? e : new Error(e));
-              } else {
-                deferred.resolve(r);
-              }
-            });
-          return deferred.promise;
-        };
-        Q.all(queries.map(qRunQuery))
-          .catch(function(e) {
-            callback(e, null);
-          })
-          .then(function(r) {
-            callback(null, r);
-          });
       }
     };
   return db;
