@@ -1,6 +1,6 @@
 {
-  "name": "datagres",
-  "version": "0.0.2",
+  "name": "datawrap",
+  "version": "0.0.3",
   "description": "An interface to make it easy to send queries to postgres",
   "keywords": ["postgres"],
   "author": "Jim McAndrew <jim@loc8.us>",
@@ -14,11 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/jimmyrocks/datagres"
+    "url": "http://github.com/jimmyrocks/datawrap"
   },
   "dependencies": {
+    "bluebird": "2.6.2",
     "fandlebars": "git+https://github.com/jimmyrocks/fandlebars#master",
     "pg": "4.1.1",
-    "q": "1.1.2"
+    "sqllite3": "3.0.4"
+  },
+  "devDependencies": {
+    "tape": "3.0.3"
   }
 }
