@@ -1,1 +1,1 @@
-module.exports = require('./src/datagres');
+module.exports = require('./src/datawrap');
