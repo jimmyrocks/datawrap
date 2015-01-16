@@ -4,8 +4,7 @@ var fandlebars = require('fandlebars'),
 
 module.exports = function(config) {
   var connect = function(callback) {
-      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{hostname}}/{{dbname}}', config);
-      console.log(connectionString);
+      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{address}}:{{port}}/{{dbname}}', config);
       pg.connect(connectionString, callback);
     },
     db = {
@@ -59,7 +58,7 @@ module.exports = function(config) {
             callback(err);
           } else {
             res.split(';').map(function(queryText) {
-              if (queryText.replace(/[\s\r\n]/g, '').length > 0) {
+              if (queryText.replace(/[\s\r\n;]/gm, '').length > 0) { //TODO: Put this in a validate query function
                 queries.push({
                   query: queryText.toString(),
                   params: params
@@ -71,8 +70,16 @@ module.exports = function(config) {
         });
       },
       runQueryList: function(queries, params, options, callback) {
-        queries = queries.map(function(a){return {query: a, params: params};});
-        db.runQueryListOld(queries, callback);
+        var newQueries = [];
+        queries = queries.map(function(a) {
+          if (a.replace(/[\s\r\n;]/gm, '').length > 0) { //TODO: Validate query more here?
+            newQueries.push ({
+              query: a,
+              params: params
+            });
+          }
+        });
+        db.runQueryListOld(newQueries, callback);
       },
       runQueryListOld: function(queryObj, callback) {
         // Runs Queries in order and waits for each to complete before starting the next query
@@ -81,12 +88,12 @@ module.exports = function(config) {
           next = function() {
             queryIndex++;
             if (queryIndex < queryObj.length) {
-              runQuery(queryIndex);
+              runSingleQuery(queryIndex);
             } else {
               done();
             }
           },
-          runQuery = function(i) {
+          runSingleQuery = function(i) {
             var result = {
               'query': queryObj[i]
             };
