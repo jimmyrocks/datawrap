@@ -2,8 +2,7 @@ var Bluebird = require('bluebird'),
   databases = require('./databases'),
   datawrapDefaults = require('../defaults'),
   fandlebars = require('fandlebars'),
-  fs = require('fs');
-Bluebird.promisifyAll(fs);
+  fs = Bluebird.promisifyAll(require('fs'));
 
 // TODO, this should be in fandlebars
 var fbobj = function(obj, tree) {
@@ -19,7 +18,7 @@ var fbobj = function(obj, tree) {
 };
 
 module.exports = function(config, defaults) {
-  defaults = defaults || fbobj(datawrapDefaults, global.process);
+  defaults = fbobj(defaults || datawrapDefaults, global.process);
 
   // Make sure the database type exists
   var database;
@@ -30,7 +29,7 @@ module.exports = function(config, defaults) {
   }
 
   var readFile = function(filepath, options) {
-    return new Promise(function(fulfill, reject) {
+    return new Bluebird(function(fulfill, reject) {
       var delimiter = options.delimiter || config.delimiter || defaults.delimiter;
       var fileOptions = options.fileOptions || config.fileOptions || defaults.fileOptions;
 
@@ -86,12 +85,11 @@ module.exports = function(config, defaults) {
         });
         database.runQueryList(mm, params, options, function(e,r){
           if (e) throw e;
-          console.log(r);
+          callback(e,r);
         });
       }).catch(function(e) {
         throw e;
       });
-
     }
   };
 };
