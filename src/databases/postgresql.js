@@ -4,7 +4,7 @@ var fandlebars = require('fandlebars'),
 
 module.exports = function(config) {
   var connect = function(callback) {
-      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{address}}:{{port}}/{{dbname}}', config);
+      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{address}}' + ( config.port ? ':{{port}}' : '') + '/{{dbname}}', config);
       pg.connect(connectionString, callback);
     },
     db = {
