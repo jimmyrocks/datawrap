@@ -73,10 +73,20 @@ module.exports = function(config) {
         var newQueries = [];
         queries = queries.map(function(a) {
           if (a.replace(/[\s\r\n;]/gm, '').length > 0) { //TODO: Validate query more here?
-            newQueries.push ({
-              query: a,
-              params: params
-            });
+            if (options.paramList) {
+              params.map(function(p){
+                newQueries.push ({
+                  query: a,
+                  params: p
+                });
+              });
+              }
+            } else {
+              newQueries.push ({
+                query: a,
+                params: params
+              });
+            }
           }
         });
         db.runQueryListOld(newQueries, callback);
