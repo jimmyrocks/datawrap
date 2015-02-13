@@ -1,10 +1,12 @@
-var fandlebars = require('fandlebars'),
+var Bluebird = require('bluebird'),
+  fandlebars = require('fandlebars'),
   fs = require('fs'),
-  pg = require('pg');
+  pg = require('pg'),
+  runList = require('../runList');
 
 module.exports = function(config) {
   var connect = function(callback) {
-      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{address}}' + ( config.port ? ':{{port}}' : '') + '/{{dbname}}', config);
+      var connectionString = fandlebars('postgres://{{username}}:{{password}}@{{address}}' + (config.port ? ':{{port}}' : '') + '/{{dbname}}', config);
       pg.connect(connectionString, callback);
     },
     db = {
@@ -28,6 +30,31 @@ module.exports = function(config) {
           delete returnValue.tempParams;
         }
         return returnValue;
+      },
+      runQueryPromise: function(query, params) {
+        return new Bluebird(function(resolve, reject) {
+          var newParams = null;
+          if (params && Object.prototype.toString.call(params) === '[object Object]') {
+            newParams = db.readParams(query, params);
+            query = newParams.query;
+            params = newParams.params;
+          }
+          connect(function(err, client, done) {
+            if (err) {
+              console.error('error fetching client from pool', err);
+            } else {
+              client.query(query, params, function(err, result) {
+                done(client);
+                if (err) {
+                  console.error('error running query', err, query);
+                  reject(err);
+                } else {
+                  resolve(result);
+                }
+              });
+            }
+          });
+        });
       },
       runQuery: function(query, params, callback) {
         // Runs an individual SQL query
@@ -69,26 +96,40 @@ module.exports = function(config) {
           }
         });
       },
-      runQueryList: function(queries, params, options, callback) {
-        var newQueries = [];
-        queries = queries.map(function(a) {
-          if (a.replace(/[\s\r\n;]/gm, '').length > 0) { //TODO: Validate query more here?
-            if (options.paramList) {
-              params.map(function(p) {
+      runQueryList: function(queries, params, options) {
+        return new Bluebird(function(resolve, reject) {
+          var newQueries = [];
+          queries = queries.map(function(a) {
+            if (a.replace(/[\s\r\n;]/gm, '').length > 0) { //TODO: Validate query more here?
+              if (options.paramList) {
+                params.map(function(p) {
+                  newQueries.push({
+                    query: a,
+                    params: p
+                  });
+                });
+              } else {
                 newQueries.push({
                   query: a,
-                  params: p
+                  params: params
                 });
-              });
-            } else {
-              newQueries.push({
-                query: a,
-                params: params
-              });
+              }
             }
-          }
+          });
+          //        db.runQueryListOld(newQueries, callback);
+          var taskList = [];
+          newQueries.map(function(q) {
+            taskList.push({
+              'name': q.query,
+              'task': db.runQueryPromise,
+              'params': [q.query, q.params]
+            });
+          });
+
+          runList(taskList, 'postgresql.js')
+            .then(resolve)
+            .catch(reject);
         });
-        db.runQueryListOld(newQueries, callback);
       },
       runQueryListOld: function(queryObj, callback) {
         // Runs Queries in order and waits for each to complete before starting the next query

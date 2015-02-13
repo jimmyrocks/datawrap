@@ -2,6 +2,7 @@ var Bluebird = require('bluebird'),
   databases = require('./databases'),
   datawrapDefaults = require('../defaults'),
   fandlebars = require('fandlebars'),
+  runList = require('./runList'),
   fs = Bluebird.promisifyAll(require('fs'));
 
 // TODO, this should be in fandlebars
@@ -33,9 +34,10 @@ module.exports = function(config, defaults) {
       var delimiter = options.delimiter || config.delimiter || defaults.delimiter;
       var fileOptions = options.fileOptions || config.fileOptions || defaults.fileOptions;
 
-      fs.readFileAsync(filepath, fileOptions).then(function(fileData) {
+      fs.readFileAsync(filepath, fileOptions)
+        .then(function(fileData) {
           var queries = fileData.split(delimiter);
-          if (queries[queries.length - 1].length < 1) {
+          if (queries[queries.length - 1].length < 3) {
             queries.pop();
           }
           fulfill(queries.map(function(v) {
@@ -64,32 +66,37 @@ module.exports = function(config, defaults) {
       var filesToRead = [];
       var modQueries = query.map(function(q) {
         if (q.match(regex)) {
-          return filesToRead.push(
-            readFile(q.replace(regex, rootDirectory), options)
-          ) - 1;
+          return filesToRead.push({
+            'name': q,
+            'task': readFile,
+            'params': [fandlebars(q, params).replace(regex, rootDirectory), options]
+          }) - 1;
         } else {
           return q;
         }
       });
-
-      Bluebird.all(filesToRead).then(function(q) {
-        var mm = [];
-        modQueries.map(function(line) {
-          if (typeof line === 'number') {
-            q[line].map(function(command) {
-              mm.push(command);
+      runList(filesToRead, 'datawrap')
+        .then(function(q) {
+          var mm = [];
+          modQueries.map(function(line) {
+            if (typeof line === 'number') {
+              q[line].map(function(command) {
+                mm.push(command);
+              });
+            } else {
+              mm.push(line);
+            }
+          });
+          database.runQueryList(mm, params, options)
+            .then(function(r) {
+              callback(null, r);
+            })
+            .catch(function(e) {
+              callback(e);
             });
-          } else {
-            mm.push(line);
-          }
+        }).catch(function(e) {
+          callback(e);
         });
-        database.runQueryList(mm, params, options, function(e,r){
-          if (e) throw e;
-          callback(e,r);
-        });
-      }).catch(function(e) {
-        throw e;
-      });
     }
   };
 };
