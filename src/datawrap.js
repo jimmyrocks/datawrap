@@ -5,21 +5,8 @@ var Bluebird = require('bluebird'),
   runList = require('./runList'),
   fs = Bluebird.promisifyAll(require('fs'));
 
-// TODO, this should be in fandlebars
-var fbobj = function(obj, tree) {
-  var newObj = Array.isArray(obj) ? [] : {};
-  for (var v in obj) {
-    if (typeof obj[v] === 'object') {
-      newObj[v] = fbobj(obj[v], tree);
-    } else {
-      newObj[v] = fandlebars(obj[v], tree);
-    }
-  }
-  return newObj;
-};
-
 module.exports = function(config, defaults) {
-  defaults = fbobj(defaults || datawrapDefaults, global.process);
+  defaults = fandlebars.obj(defaults || datawrapDefaults, global.process);
 
   // Make sure the database type exists
   var database;
