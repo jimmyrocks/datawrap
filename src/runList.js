@@ -17,7 +17,7 @@ module.exports = function(list, taskName) {
           messages.push(msg);
           nextList = sublist.slice(1);
           if (nextList.length > 0) {
-            exec(nextList, callback);
+            exec(nextList, messages, callback);
           } else {
             callback(null, messages);
           }
