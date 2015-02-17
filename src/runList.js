@@ -1,14 +1,17 @@
 var Bluebird = require('bluebird');
+var fandlebarsObj = require('fandlebars').obj;
 
 module.exports = function(list, taskName) {
   var messages = [];
   return new Bluebird(function(listResolve, listReject) {
 
-    var exec = function(sublist, callback) {
+    var exec = function(sublist, msgList, callback) {
       var nextList = [];
+      var params = Array.isArray(sublist[0].params) ? sublist[0].params : [sublist[0].params];
+      fandlebarsObj(params, {'msgList': msgList});
       sublist[0].task.apply(
           sublist[0].context,
-          Array.isArray(sublist[0].params) ? sublist[0].params : [sublist[0].params]
+          params
         )
         .then(function(msg) {
           messages.push(msg);
