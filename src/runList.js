@@ -27,7 +27,7 @@ module.exports = function(list, taskName) {
           params
         )
         .then(function(msg) {
-          messages[messages.push(msg)].name = sublist[0].name;
+          messages.push(msg);
           nextList = sublist.slice(1);
           if (nextList.length > 0) {
             exec(nextList, messages, callback);
