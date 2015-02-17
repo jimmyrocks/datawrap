@@ -8,7 +8,7 @@ module.exports = function(list, taskName) {
     var exec = function(sublist, msgList, callback) {
       var nextList = [];
       var params = Array.isArray(sublist[0].params) ? sublist[0].params : [sublist[0].params];
-      fandlebarsObj(params, {'msgList': msgList});
+      params = fandlebarsObj(params, {'msgList': msgList});
       sublist[0].task.apply(
           sublist[0].context,
           params
