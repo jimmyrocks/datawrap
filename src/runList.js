@@ -28,7 +28,7 @@ module.exports = function(list, taskName) {
     };
 
     if (list.length > 0) {
-      exec(list, function(e, r) {
+      exec(list, messages, function(e, r) {
         if (e) {
           e.taskName = taskName;
           listReject(e);
