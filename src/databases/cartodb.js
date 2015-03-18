@@ -16,15 +16,12 @@ module.exports = function(config) {
           return new Bluebird(function(queryResolve, queryReject) {
             // Escape the single quote
             for (var param in params) {
-              console.log('params 1', param, params[param]);
               if (typeof params[param] === 'string') {
                 params[param] = params[param].replace(/([^']|^)'/g, '$1\'\'');
               }
-              console.log('params 2', param, params[param]);
             }
             var cleanedSql = fandlebars(query, params).replace(/\'null\'/g, 'null'),
               requestPath = 'https://' + config.account + '.cartodb.com/api/v2/sql';
-            console.log(cleanedSql);
             if (cleanedSql.length > 5) {
               // console.log('Requesting', requestPath, '(' + cleanedSql + ')');
               unirest.post(requestPath)
