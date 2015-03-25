@@ -36,7 +36,8 @@ module.exports = function(list, taskName) {
           }
         })
         .catch(function(e) {
-          callback(e);
+          messages.push(e);
+          callback(messages);
         });
     };
 
