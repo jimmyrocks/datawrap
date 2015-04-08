@@ -1,4 +1,5 @@
 var Bluebird = require('bluebird'),
+  Mockingbird = require('./mockingbird'),
   databases = require('./databases'),
   datawrapDefaults = require('../defaults'),
   fandlebars = require('fandlebars'),
@@ -40,50 +41,48 @@ module.exports = function(config, defaults) {
 
   return {
     runQuery: function(query, params, options, callback) {
-
+      // Allow options to be a callback
       callback = typeof options === 'function' ? options : callback;
-      query = Array.isArray(query) ? query : [query];
-      options = typeof options === 'object' ? options : {};
 
-      var regex = new RegExp(options.fileDesignator || config.fileDesignator || defaults.fileDesignator),
-        rootDirectory = (options.rootDirectory || config.rootDirectory || defaults.rootDirectory);
-      rootDirectory = rootDirectory + (rootDirectory.substr(-1) === '/' ? '' : '/');
+      //Wrap in mockingbird so that it can used with a callback or with bluebird
+      return new Mockingbird(callback)(function(fulfill, reject) {
+        query = Array.isArray(query) ? query : [query];
+        options = typeof options === 'object' ? options : {};
 
-      // Determine if we need to read any files
-      var filesToRead = [];
-      var modQueries = query.map(function(q) {
-        if (q.match(regex)) {
-          return filesToRead.push({
-            'name': q,
-            'task': readFile,
-            'params': [fandlebars(q, params).replace(regex, rootDirectory), options]
-          }) - 1;
-        } else {
-          return q;
-        }
-      });
-      runList(filesToRead, 'datawrap')
-        .then(function(q) {
-          var mm = [];
-          modQueries.map(function(line) {
-            if (typeof line === 'number') {
-              q[line].map(function(command) {
-                mm.push(command);
-              });
-            } else {
-              mm.push(line);
-            }
-          });
-          database.runQueryList(mm, params, options)
-            .then(function(r) {
-              callback(null, r);
-            })
-            .catch(function(e) {
-              callback(e);
-            });
-        }).catch(function(e) {
-          callback(e);
+        var regex = new RegExp(options.fileDesignator || config.fileDesignator || defaults.fileDesignator),
+          rootDirectory = (options.rootDirectory || config.rootDirectory || defaults.rootDirectory);
+        rootDirectory = rootDirectory + (rootDirectory.substr(-1) === '/' ? '' : '/');
+
+        // Determine if we need to read any files
+        var filesToRead = [];
+        var modQueries = query.map(function(q) {
+          if (q.match(regex)) {
+            return filesToRead.push({
+              'name': q,
+              'task': readFile,
+              'params': [fandlebars(q, params).replace(regex, rootDirectory), options]
+            }) - 1;
+          } else {
+            return q;
+          }
         });
+        runList(filesToRead, 'datawrap')
+          .then(function(q) {
+            var mm = [];
+            modQueries.map(function(line) {
+              if (typeof line === 'number') {
+                q[line].map(function(command) {
+                  mm.push(command);
+                });
+              } else {
+                mm.push(line);
+              }
+            });
+            database.runQueryList(mm, params, options)
+              .then(fulfill)
+              .catch(reject);
+          }).catch(reject);
+      });
     }
   };
 };
