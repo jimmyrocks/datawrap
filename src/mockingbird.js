@@ -1,4 +1,4 @@
-Bluebird = require('bluebird');
+var Bluebird = require('bluebird');
 
 module.exports = function(callback) {
   return (callback && typeof callback === 'function') ? function(f) {
