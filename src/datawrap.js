@@ -45,7 +45,7 @@ module.exports = function(config, defaults) {
       callback = typeof options === 'function' ? options : callback;
 
       //Wrap in mockingbird so that it can used with a callback or with bluebird
-      return new Mockingbird(callback)(function(fulfill, reject) {
+      return new (Mockingbird(callback))(function(fulfill, reject) {
         query = Array.isArray(query) ? query : [query];
         options = typeof options === 'object' ? options : {};
 
