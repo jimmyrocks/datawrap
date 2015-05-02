@@ -21,7 +21,6 @@
     "fandlebars": "git+https://github.com/jimmyrocks/fandlebars#master",
     "pg": "4.3.0",
     "sqlite3": "3.0.5",
-    "spatialite": "0.0.5",
     "unirest": "0.4.0"
   },
   "devDependencies": {
