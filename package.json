@@ -17,10 +17,11 @@
     "url": "http://github.com/jimmyrocks/datawrap"
   },
   "dependencies": {
-    "bluebird": "2.9.24",
+    "bluebird": "2.9.25",
     "fandlebars": "git+https://github.com/jimmyrocks/fandlebars#master",
     "pg": "4.3.0",
     "sqlite3": "3.0.5",
+    "spatialite": "0.0.5",
     "unirest": "0.4.0"
   },
   "devDependencies": {
