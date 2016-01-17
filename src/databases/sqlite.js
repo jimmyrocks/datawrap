@@ -9,10 +9,10 @@ var connection = function (name, connection) {
   databases[name] = connectionDb;
   dbOpen = true;
   return {
-    all: function(query, callback) {
+    all: function (query, callback) {
       return connectionDb.all(query, callback);
     },
-    close: function(force) {
+    close: function (force) {
       if (!name || force) {
         connectionDb.close();
       } else {
@@ -23,7 +23,29 @@ var connection = function (name, connection) {
 };
 
 module.exports = function (config) {
-  return {
+  var plugin = {
+    readParams: function (rawQuery, objParams) {
+      // Creates a parameterized query for sqlite3
+      var re = function (name) {
+        return new RegExp('{{' + name + '}}', 'g');
+      };
+      return {
+        newQuery: rawQuery.replace(re('.+?'), '?'),
+        params: rawQuery.match(re('.+?')).map(function (field) {
+          return objParams[field.replace(/^{{|}}$/g, '')];
+        })
+      };
+    },
+    buildArray: function (scope, query, params, callback) {
+      var queryArray = [scope];
+      var parameterizedQuery = plugin.readParams(query, params);
+      queryArray.push(parameterizedQuery.newQuery);
+      for (var i = 0; i < parameterizedQuery.params.length; i++) {
+        queryArray.push(parameterizedQuery.params[i]);
+      }
+      queryArray.push(callback);
+      return queryArray;
+    },
     runQueryList: function (sql, params) {
       return new Bluebird(function (resolve, reject) {
         var db = connection(config.name, config.connection || ':memory:');
@@ -31,21 +53,21 @@ module.exports = function (config) {
           db.close(true);
           resolve(true);
           return;
-        };
+        }
         if (!Array.isArray(sql)) {
           sql = [sql];
         }
 
         var runQuery = function (query, params) {
           return new Bluebird(function (queryResolve, queryReject) {
-            // params = params || {};
-            db.all(query, function (err, rows) {
+            var callback = function (err, rows) {
               if (err) {
                 queryReject(err);
               } else {
                 queryResolve(rows);
               }
-            });
+            };
+            db.all.apply(plugin.buildArray(db, query, params, callback));
           });
         };
 
@@ -70,4 +92,5 @@ module.exports = function (config) {
       });
     }
   };
+  return plugin;
 };
