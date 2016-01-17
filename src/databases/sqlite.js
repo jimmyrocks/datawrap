@@ -31,13 +31,13 @@ module.exports = function (config) {
       };
       return {
         newQuery: rawQuery.replace(re('.+?'), '?'),
-        params: rawQuery.match(re('.+?')).map(function (field) {
+        params: ([] || rawQuery.match(re('.+?'))).map(function (field) {
           return objParams[field.replace(/^{{|}}$/g, '')];
         })
       };
     },
-    buildArray: function (scope, query, params, callback) {
-      var queryArray = [scope];
+    buildArray: function (query, params, callback) {
+      var queryArray = [];
       var parameterizedQuery = plugin.readParams(query, params);
       queryArray.push(parameterizedQuery.newQuery);
       for (var i = 0; i < parameterizedQuery.params.length; i++) {
@@ -46,18 +46,9 @@ module.exports = function (config) {
       queryArray.push(callback);
       return queryArray;
     },
-    runQueryList: function (sql, params) {
+    runQueryList: function (queries, params, options) {
       return new Bluebird(function (resolve, reject) {
         var db = connection(config.name, config.connection || ':memory:');
-        if (sql[0] === 'close') {
-          db.close(true);
-          resolve(true);
-          return;
-        }
-        if (!Array.isArray(sql)) {
-          sql = [sql];
-        }
-
         var runQuery = function (query, params) {
           return new Bluebird(function (queryResolve, queryReject) {
             var callback = function (err, rows) {
@@ -67,16 +58,47 @@ module.exports = function (config) {
                 queryResolve(rows);
               }
             };
-            db.all.apply(plugin.buildArray(db, query, params, callback));
+            db.all.apply(db, plugin.buildArray(query, params, callback));
           });
         };
 
+        // All the option to close the database connection
+        if (options.close === true) {
+          db.close(true);
+          resolve(true);
+          return;
+        }
+
+        // The queries should always be in an array
+        if (!Array.isArray(queries)) {
+          queries = [queries];
+        }
+
+        var newQueries = [];
+        queries = queries.map(function (q) {
+          if (q.replace(/[\s\r\n;]/gm, '').length > 0) { // TODO: Validate query more here?
+            if (options.paramList) {
+              params.map(function (p) {
+                newQueries.push({
+                  query: q,
+                  params: p
+                });
+              });
+            } else {
+              newQueries.push({
+                query: q,
+                params: params
+              });
+            }
+          }
+        });
+
         var taskList = [];
-        sql.map(function (query) {
+        newQueries.map(function (q) {
           taskList.push({
-            'name': 'Query: ' + query,
+            'name': 'Query: ' + q.query,
             'task': runQuery,
-            'params': [query, params]
+            'params': [q.query, q.params]
           });
         });
 
