@@ -9,8 +9,8 @@ var connection = function (name, connection) {
   databases[name] = connectionDb;
   dbOpen = true;
   return {
-    all: function (query, callback) {
-      return connectionDb.all(query, callback);
+    all: function (options) {
+      return connectionDb.all.apply(connectionDb, options);
     },
     close: function (force) {
       if (!name || force) {
@@ -29,24 +29,28 @@ module.exports = function (config) {
       var re = function (name) {
         return new RegExp('{{' + name + '}}', 'g');
       };
-      return {
+      var r = {
         newQuery: rawQuery.replace(re('.+?'), '?'),
-        params: ([] || rawQuery.match(re('.+?'))).map(function (field) {
+        params: (rawQuery.match(re('.+?')) || []).map(function (field) {
           return objParams[field.replace(/^{{|}}$/g, '')];
         })
       };
+      return r;
     },
     buildArray: function (query, params, callback) {
       var queryArray = [];
       var parameterizedQuery = plugin.readParams(query, params);
       queryArray.push(parameterizedQuery.newQuery);
+      queryArray.push(parameterizedQuery.params);
       for (var i = 0; i < parameterizedQuery.params.length; i++) {
         queryArray.push(parameterizedQuery.params[i]);
       }
       queryArray.push(callback);
       return queryArray;
     },
+
     runQueryList: function (queries, params, options) {
+      params = params || {};
       return new Bluebird(function (resolve, reject) {
         var db = connection(config.name, config.connection || ':memory:');
         var runQuery = function (query, params) {
@@ -58,7 +62,7 @@ module.exports = function (config) {
                 queryResolve(rows);
               }
             };
-            db.all.apply(db, plugin.buildArray(query, params, callback));
+            db.all(plugin.buildArray(query, params, callback));
           });
         };
 
