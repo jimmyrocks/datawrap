@@ -56,7 +56,7 @@ module.exports = function(config, defaults) {
         // Determine if we need to read any files
         var filesToRead = [];
         var modQueries = query.map(function(q) {
-          if (q.match(regex)) {
+          if (q && q.match(regex)) {
             return filesToRead.push({
               'name': q,
               'task': readFile,
