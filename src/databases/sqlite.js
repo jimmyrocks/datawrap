@@ -4,6 +4,7 @@ var sqlite = require('sqlite3');
 var runList = require('../runList');
 var dbOpen = false;
 var databases = {};
+var fandlebars = require('fandlebars');
 var connection = function (name, connection) {
   var connectionDb = (dbOpen && name && databases[name]) ? databases[name] : new sqlite.Database(connection);
   databases[name] = connectionDb;
@@ -32,7 +33,7 @@ module.exports = function (config) {
       var r = {
         newQuery: rawQuery.replace(re('.+?'), '?'),
         params: (rawQuery.match(re('.+?')) || []).map(function (field) {
-          return objParams[field.replace(/^{{|}}$/g, '')];
+          return fandlebars(field, objParams, null, true)[field];
         })
       };
       return r;
