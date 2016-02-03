@@ -57,6 +57,7 @@ module.exports = function (config) {
           return new Bluebird(function (queryResolve, queryReject) {
             var callback = function (err, rows) {
               if (err) {
+                err.stack = new Error().stack;
                 queryReject(err);
               } else {
                 queryResolve(rows);
@@ -113,7 +114,7 @@ module.exports = function (config) {
           })
           .catch(function (e) {
             db.close();
-            reject(e);
+            reject(e[e.length - 1]);
           });
       });
     }
