@@ -22,11 +22,36 @@ module.exports = function(list, taskName) {
       var nextList = [];
       var params = Array.isArray(sublist[0].params) ? sublist[0].params : [sublist[0].params];
       params = applyParams(params, list, msgList);
-      sublist[0].task.apply(
+      var taskResObj = {};
+      try {
+        var taskRes = sublist[0].task.apply(
           sublist[0].context,
           params
-        )
-        .then(function(msg) {
+        );
+        if (taskRes && taskRes.then && typeof taskRes.then === 'function' && taskRes.catch && typeof taskRes.catch === 'function') {
+          // This is a bluebird function
+          console.log(taskRes);
+          taskResObj = taskRes;
+        } else {
+          // it's an imposter!
+          taskResObj.then = taskRes && taskRes.then || function(thenFn) {
+            thenFn(taskRes);
+            return taskResObj
+          };
+          taskResObj.catch = taskRes && taskRes.catch || function(catchFn) {
+            return taskResObj
+          };
+        }
+      } catch (e) {
+        taskResObj.then = function(catchFn) {
+          return taskResObj
+        };
+        taskResObj.catch = function(catchFn) {
+          catchFn(e);
+          return taskResObj
+        };
+      }
+      taskResObj.then(function(msg) {
           messages.push(msg);
           nextList = sublist.slice(1);
           if (nextList.length > 0) {

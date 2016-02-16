@@ -1,6 +1,6 @@
 var Bluebird = require('bluebird'),
   fandlebars = require('fandlebars'),
-  unirest = require('unirest'),
+  superagent = require('superagent'),
   runList = require('../runList');
 
 module.exports = function(config) {
@@ -15,29 +15,26 @@ module.exports = function(config) {
 
           return new Bluebird(function(queryResolve, queryReject) {
             // Escape the single quote
-            for (var param in params) {
-              if (typeof params[param] === 'string') {
-                params[param] = params[param].replace(/([^']|^)'/g, '$1\'\'');
-              }
-            }
-            var cleanedSql = fandlebars(query, params).replace(/\'null\'/g, 'null'),
+            // for (var param in params) {
+            //   if (typeof params[param] === 'string') {
+            //     params[param] = params[param].replace(/([^']|^)'/g, '$1\'\'');
+            //   }
+            // }
+            var cleanedSql = fandlebars(query, params);//.replace(/\'null\'/g, 'null'),
               requestPath = 'https://' + config.account + '.cartodb.com/api/v2/sql';
             if (cleanedSql.length > 5) {
-              // console.log('Requesting', requestPath, '(' + cleanedSql + ')');
-              unirest.post(requestPath)
+              superagent.post(requestPath)
                 .set('Content-Type', 'application/json')
-                .header({
-                  'Accept': 'application/json'
-                })
+                .set('Accept', 'application/json')
                 .send({
                   'q': cleanedSql,
                   'api_key': config.apiKey
                 })
-                .end(function(resp) {
-                  if (resp.error) {
-                    queryReject(JSON.stringify(resp, null, 2));
+                .end(function(err, resp) {
+                  if (err || resp.error) {
+                    queryReject(JSON.stringify(err || resp, null, 2));
                   } else {
-                    queryResolve(resp.body);
+                    queryResolve(resp.text);
                   }
                 });
             } else {
