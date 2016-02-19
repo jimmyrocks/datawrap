@@ -30,7 +30,6 @@ module.exports = function(list, taskName) {
         );
         if (taskRes && taskRes.then && typeof taskRes.then === 'function' && taskRes.catch && typeof taskRes.catch === 'function') {
           // This is a bluebird function
-          console.log(taskRes);
           taskResObj = taskRes;
         } else {
           // it's an imposter!
