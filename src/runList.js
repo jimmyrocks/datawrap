@@ -1,17 +1,18 @@
 var Bluebird = require('bluebird');
+var fandlebars = require('fandlebars');
 
 var applyParams = function (params, tasks, results) {
-  // TODO, this should use fandlebars
+  var resultObj = {};
+  tasks.forEach(function (task, i) {
+    if (results.length >= i && task.name) {
+      resultObj[task.name] = results[i];
+    }
+  });
+
   return params.map(function (param) {
-    var returnValue;
+    var returnValue = param;
     if (typeof param === 'string' && param.match(/^\{\{.+?\}\}/g)) {
-      tasks.map(function (task, i) {
-        if (results.length >= i && task.name === param.replace(/^\{\{|\}\}/g, '')) {
-          returnValue = results[i];
-        }
-      });
-    } else {
-      returnValue = param;
+      returnValue = fandlebars(param, resultObj, null, true)[param] || param;
     }
     return returnValue;
   });
@@ -31,12 +32,11 @@ module.exports = function (list, taskName, verbose) {
   var messages = [];
   var report = reporter(verbose);
   return new Bluebird(function (listResolve, listReject) {
-
     var exec = function (sublist, msgList, callback) {
       var nextList = [];
       var params = Array.isArray(sublist[0].params) ? sublist[0].params : [sublist[0].params];
       params = applyParams(params, list, msgList);
-      report('Exec Name', sublist[0].name);
+      report('*** Executing Task ***\n\t', sublist[0].name);
 
       var taskResObj = {};
       try {
