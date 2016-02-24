@@ -4,7 +4,7 @@ var fandlebars = require('fandlebars');
 var applyParams = function (params, tasks, results) {
   var resultObj = {};
   tasks.forEach(function (task, i) {
-    if (results.length >= i && task.name) {
+    if (results.length > i && task.name) {
       resultObj[task.name] = results[i];
     }
   });
@@ -12,7 +12,7 @@ var applyParams = function (params, tasks, results) {
   return params.map(function (param) {
     var returnValue = param;
     if (typeof param === 'string' && param.match(/^\{\{.+?\}\}/g)) {
-      returnValue = fandlebars(param, resultObj, null, true)[param] || param;
+      returnValue = fandlebars(param, resultObj, null, true)[param];
     }
     return returnValue;
   });
