@@ -17,14 +17,14 @@
     "url": "http://github.com/jimmyrocks/datawrap"
   },
   "dependencies": {
-    "bluebird": "3.1.5",
+    "bluebird": "3.5.5",
     "fandlebars": "git+https://github.com/jimmyrocks/fandlebars#master",
-    "pg": "4.4.3",
-    "sqlite3": "3.1.1",
-    "unirest": "0.4.2"
+    "pg": "7.12.0",
+    "sqlite3": "4.0.9",
+    "unirest": "0.6.0"
   },
   "devDependencies": {
-    "tape": "4.4.0"
+    "tape": "4.11.0"
   },
   "engine": "node 0.10.35"
 }
