@@ -4,6 +4,12 @@ var Bluebird = require('bluebird'),
   runList = require('../runList');
 
 module.exports = function(config) {
+  //set defaults
+  config.protocol = config.protocol || 'https';
+  config.url = config.url || '{{account}}.cartodb.com';
+  config.url = fandlebars(config.url, config);
+  config.requestPath = config.requestPath || fandlebars('{{protocol}}://{{url}}/api/v2/sql',config);
+
   return {
     runQueryList: function(sql, params) {
       return new Bluebird(function(resolve, reject) {
@@ -20,10 +26,8 @@ module.exports = function(config) {
                 params[param] = params[param].replace(/([^']|^)'/g, '$1\'\'');
               }
             }
-            var cleanedSql = fandlebars(query, params).replace(/\'null\'/g, 'null'),
-              requestPath = 'https://' + config.account + '.cartodb.com/api/v2/sql';
+            var cleanedSql = fandlebars(query, params).replace(/\'null\'/g, 'null');
             if (cleanedSql.length > 5) {
-              // console.log('Requesting', requestPath, '(' + cleanedSql + ')');
               unirest.post(requestPath)
                 .set('Content-Type', 'application/json')
                 .header({
