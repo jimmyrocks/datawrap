@@ -1,7 +1,7 @@
-var Bluebird = require('bluebird'),
-  fandlebars = require('fandlebars'),
-  unirest = require('unirest'),
-  runList = require('../runList');
+var Bluebird = require('bluebird');
+var fandlebars = require('fandlebars');
+var unirest = require('unirest');
+var runList = require('../runList');
 
 module.exports = function(config) {
   //set defaults
@@ -26,7 +26,8 @@ module.exports = function(config) {
                 params[param] = params[param].replace(/([^']|^)'/g, '$1\'\'');
               }
             }
-            var cleanedSql = fandlebars(query, params).replace(/\'null\'/g, 'null');
+            var cleanedSql = fandlebars(query, params).replace(/'null'/g, 'null');
+            var requestPath = config.requestPath;
             if (cleanedSql.length > 5) {
               unirest.post(requestPath)
                 .set('Content-Type', 'application/json')
